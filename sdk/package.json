@@ -1,0 +1,19 @@
+{
+  "name": "@stacklens/sdk",
+  "version": "0.1.0",
+  "description": "Zero-config observability SDK for Node.js",
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "scripts": {
+    "build": "tsc",
+    "dev": "tsc --watch"
+  },
+  "dependencies": {
+    "@stacklens/types": "*",
+    "axios": "^1.6.8"
+  },
+  "devDependencies": {
+    "@types/node": "^20.12.7",
+    "typescript": "^5.4.5"
+  }
+}

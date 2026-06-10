@@ -1,0 +1,19 @@
+{
+  "name": "stacklens",
+  "version": "1.0.0",
+  "private": true,
+  "workspaces": [
+    "types",
+    "sdk",
+    "backend",
+    "dashboard"
+  ],
+  "scripts": {
+    "dev": "concurrently \"npm run dev -w backend\" \"npm run dev -w dashboard\"",
+    "build": "npm run build -w sdk && npm run build -w backend && npm run build -w dashboard"
+  },
+  "devDependencies": {
+    "concurrently": "^8.2.2",
+    "typescript": "^5.4.5"
+  }
+}
