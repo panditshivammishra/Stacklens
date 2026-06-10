@@ -4,3 +4,4 @@ INTERVIEW_QA.txt
 .env
 *.log
 .DS_Store
+STACKLENS_CONTEXT.md
