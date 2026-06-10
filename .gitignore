@@ -1,7 +1,7 @@
 node_modules/
 dist/
 INTERVIEW_QA.txt
+STACKLENS_CONTEXT.md
 .env
 *.log
 .DS_Store
-STACKLENS_CONTEXT.md
