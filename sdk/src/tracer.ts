@@ -18,10 +18,12 @@ const storage = new AsyncLocalStorage<SpanContext>()
 let config: StacklensConfig
 const buffer: Span[] = []
 let flushTimer: NodeJS.Timeout | null = null
+// Auth failures repeat every flush; warn once instead of every 5 seconds forever.
+let warnedAboutAuth = false
 
 export function init(cfg: StacklensConfig): void {
   config = {
-    backendUrl: 'http://localhost:4000',
+    backendUrl: 'http://localhost:4001',   // the Python backend (the Node one on :4000 was retired)
     flushInterval: 5000,
     maxBufferSize: 100,
     ...cfg,
@@ -96,6 +98,13 @@ export function getCurrentContext(): SpanContext | undefined {
   return storage.getStore()
 }
 
+// Run fn with an explicit context in the backpack. Used by the middleware to
+// seed an incoming request with the CALLER's trace context (read from the
+// x-trace-id headers) so the whole cross-service journey shares one traceId.
+export function runInContext<T>(context: SpanContext, fn: () => T): T {
+  return storage.run(context, fn)
+}
+
 function bufferSpan(span: Span): void {
   if (buffer.length >= (config?.maxBufferSize ?? 100)) {
     buffer.shift() // drop oldest when buffer is full (backpressure handling)
@@ -120,11 +129,31 @@ async function flush(): Promise<void> {
   try {
     const response = await fetch(`${config.backendUrl}/ingest`, {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
+      headers: {
+        'Content-Type': 'application/json',
+        // The key proves which service these spans belong to. The backend reads
+        // the service id OFF THIS KEY and ignores whatever serviceId the payload
+        // claims — which is what makes spoofing another service impossible.
+        ...(config.apiKey ? { 'x-api-key': config.apiKey } : {}),
+      },
       body: JSON.stringify({ spans }),
     })
+
     if (!response.ok) {
-      buffer.unshift(...spans) // put them back on failure
+      // 401 = bad/missing/revoked key. Retrying cannot fix that, and re-queuing
+      // would grow the buffer forever while every flush failed. Warn once so the
+      // developer sees the real reason, then drop the batch.
+      if (response.status === 401) {
+        if (!warnedAboutAuth) {
+          warnedAboutAuth = true
+          console.warn(
+            '[stacklens] ingest rejected (401). Set `apiKey` in your stacklens() ' +
+            'config — create one with POST /api/services. Spans are being dropped.'
+          )
+        }
+        return
+      }
+      buffer.unshift(...spans) // transient failure — put them back and retry later
     }
   } catch {
     // backend is down — silently drop to avoid noise

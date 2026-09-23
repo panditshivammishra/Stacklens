@@ -1,0 +1,121 @@
+@import "tailwindcss";
+
+/* ─────────────────────────────────────────────────────────────────────────────
+   Design tokens.
+
+   Every colour in the app comes from this list. Components never reach for a
+   raw Tailwind palette colour (zinc-800, blue-400…) — they use these names, so
+   the whole look can be changed here in one place.
+
+   The neutrals are warm (a hint of yellow-brown) rather than the blue-grey most
+   dark dashboards ship with. Colour is reserved for MEANING: green = healthy,
+   yellow = slow, red = failing, and each service gets its own hue so you can
+   follow a request as it crosses from one service into another. The orange
+   "signal" colour is the brand and appears only on the logo, focus rings and
+   the active page — never as decoration.
+   ───────────────────────────────────────────────────────────────────────────── */
+:root {
+  --canvas: #0b0b0a;       /* page background */
+  --panel: #121211;        /* anything raised off the page */
+  --raised: #1a1a18;       /* hover, table headers */
+  --line: #242320;         /* hairline dividers */
+  --line-strong: #34332e;  /* input borders, emphasis */
+
+  --ink: #ebe9e3;          /* primary text */
+  --ink-muted: #a3a097;    /* secondary text */
+  --ink-faint: #6c6960;    /* labels, timestamps */
+
+  --signal: #ff8a4c;
+  --ok: #5fc98a;
+  --warn: #e6c15a;
+  --err: #f0605d;
+}
+
+@theme inline {
+  --color-canvas: var(--canvas);
+  --color-panel: var(--panel);
+  --color-raised: var(--raised);
+  --color-line: var(--line);
+  --color-line-strong: var(--line-strong);
+  --color-ink: var(--ink);
+  --color-ink-muted: var(--ink-muted);
+  --color-ink-faint: var(--ink-faint);
+  --color-signal: var(--signal);
+  --color-ok: var(--ok);
+  --color-warn: var(--warn);
+  --color-err: var(--err);
+
+  /* Set on <html> by next/font in app/layout.tsx */
+  --font-sans: var(--font-plex-sans), ui-sans-serif, system-ui, sans-serif;
+  --font-mono: var(--font-plex-mono), ui-monospace, "SFMono-Regular", monospace;
+}
+
+/* Base element styles live in a cascade LAYER on purpose. Tailwind v4 puts its
+   utility classes in @layer utilities, and any style outside a layer beats every
+   layered style no matter how specific. Left unlayered, these rules would quietly
+   win over classes like `outline-offset-0` written on a single element. */
+@layer base {
+  html {
+    color-scheme: dark;
+    background: var(--canvas);
+  }
+
+  body {
+    background: var(--canvas);
+    color: var(--ink);
+    font-family: var(--font-sans);
+    font-size: 14px;
+    line-height: 1.5;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+    /* Numbers line up in columns everywhere, not just where we remember to ask. */
+    font-variant-numeric: tabular-nums;
+  }
+
+  ::selection {
+    background: color-mix(in oklab, var(--signal) 35%, transparent);
+    color: var(--ink);
+  }
+
+  /* One focus style for every interactive element — visible for keyboard users,
+     absent for mouse clicks (that is what :focus-visible distinguishes). The
+     outline follows each element's own rounded corners, so no radius is set. */
+  :focus-visible {
+    outline: 2px solid var(--signal);
+    outline-offset: 2px;
+  }
+
+  /* Quiet scrollbars that match the palette instead of the OS default. */
+  * {
+    scrollbar-width: thin;
+    scrollbar-color: var(--line-strong) transparent;
+  }
+}
+
+/* A row that has just arrived on the live feed glows briefly, so new data is
+   noticeable without anything moving or jumping. */
+@keyframes row-arrive {
+  from { background-color: color-mix(in oklab, var(--signal) 9%, transparent); }
+  to   { background-color: transparent; }
+}
+.row-arrive {
+  animation: row-arrive 1.6s ease-out;
+}
+
+/* The "live" dot's slow pulse. Disabled for anyone who has asked their OS for
+   less motion. */
+@keyframes pulse-ring {
+  0%   { box-shadow: 0 0 0 0 color-mix(in oklab, var(--ok) 55%, transparent); }
+  70%  { box-shadow: 0 0 0 5px transparent; }
+  100% { box-shadow: 0 0 0 0 transparent; }
+}
+.pulse-ring {
+  animation: pulse-ring 2s ease-out infinite;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .row-arrive,
+  .pulse-ring {
+    animation: none;
+  }
+}

@@ -27,6 +27,21 @@ services:
       timeout: 5s
       retries: 5
 
+  # A browser window onto Postgres, so you can read the real tables without
+  # installing pgAdmin or learning psql. Read-write, but it is a dev-only
+  # convenience — it has no password and must never be exposed outside localhost.
+  # Open http://localhost:8081 — it connects itself, there is nothing to log in to.
+  pgweb:
+    image: sosedoff/pgweb:latest
+    container_name: stacklens-pgweb
+    depends_on:
+      postgres:
+        condition: service_healthy
+    environment:
+      DATABASE_URL: postgres://postgres:password@postgres:5432/stacklens?sslmode=disable
+    ports:
+      - "8081:8081"
+
   qdrant:
     image: qdrant/qdrant:v1.9.2
     container_name: stacklens-qdrant

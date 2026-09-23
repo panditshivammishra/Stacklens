@@ -7,5 +7,6 @@ export function stacklens(config: StacklensConfig): void {
   instrumentHttp()
 }
 
-export { startSpan, endSpan, runWithSpan, getCurrentContext } from './tracer'
+export { startSpan, endSpan, runWithSpan, getCurrentContext, runInContext } from './tracer'
+export { stacklensMiddleware } from './middleware'
 export type { Span, SpanContext, StacklensConfig } from '@stacklens/types'

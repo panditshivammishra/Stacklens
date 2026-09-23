@@ -1,0 +1,23 @@
+# ─────────────────────────────────────────────────────────────────────────────
+# Python dependencies — the FastAPI port of the Stacklens backend.
+# Node equivalent of each is noted on the right.
+# ─────────────────────────────────────────────────────────────────────────────
+
+fastapi==0.115.6            # web framework            (Node: fastify)
+uvicorn[standard]==0.34.0   # dev/prod server + reload (Node: ts-node-dev / node)
+asyncpg==0.30.0             # async Postgres driver    (Node: pg)
+redis==5.2.1                # async Redis client       (Node: ioredis)
+python-dotenv==1.0.1        # loads .env               (Node: dotenv)
+google-generativeai==0.8.3  # Gemini adapter           (Node: @google/generative-ai)
+openai==1.59.7              # OpenAI-compatible adapter (also covers Groq, Ollama, etc.)
+qdrant-client==1.12.1       # vector DB client         (Node: @qdrant/js-client-rest)
+
+# Auth
+bcrypt==4.2.1               # password hashing (slow on purpose)
+pyjwt==2.10.1               # sign/verify session JWTs
+email-validator==2.2.0      # powers Pydantic's EmailStr
+
+# Testing (see TESTING.md) — `pytest` from this folder runs everything
+pytest==9.1.1               # test runner
+pytest-asyncio==1.4.0       # lets tests be `async def` without boilerplate
+asgi-lifespan==2.1.0        # runs the app's real startup/shutdown in-process

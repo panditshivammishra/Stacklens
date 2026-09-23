@@ -5,12 +5,14 @@
   "workspaces": [
     "types",
     "sdk",
-    "backend",
     "dashboard"
   ],
   "scripts": {
-    "dev": "concurrently \"npm run dev -w backend\" \"npm run dev -w dashboard\"",
-    "build": "npm run build -w sdk && npm run build -w backend && npm run build -w dashboard"
+    "dev": "npm run dev -w dashboard",
+    "demo": "node demo/app.js",
+    "build": "npm run build -w sdk && npm run build -w dashboard",
+    "testapp:payments": "node testapp/payments-service.js",
+    "testapp:orders": "node testapp/orders-service.js"
   },
   "devDependencies": {
     "concurrently": "^8.2.2",

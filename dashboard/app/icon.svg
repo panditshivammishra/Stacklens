@@ -1,0 +1,8 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32">
+  <!-- The mark is a trace waterfall in miniature: a root span, a child that
+       starts later and ends sooner, and a grandchild inside that. -->
+  <rect width="32" height="32" rx="7" fill="#141412"/>
+  <rect x="6"  y="8"  width="20" height="4" rx="2" fill="#ebe9e3"/>
+  <rect x="10" y="14" width="13" height="4" rx="2" fill="#ff8a4c"/>
+  <rect x="14" y="20" width="6"  height="4" rx="2" fill="#ff8a4c" fill-opacity=".55"/>
+</svg>
