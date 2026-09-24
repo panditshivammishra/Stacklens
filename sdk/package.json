@@ -9,8 +9,7 @@
     "dev": "tsc --watch"
   },
   "dependencies": {
-    "@stacklens/types": "*",
-    "axios": "^1.6.8"
+    "@stacklens/types": "*"
   },
   "devDependencies": {
     "@types/node": "^20.12.7",

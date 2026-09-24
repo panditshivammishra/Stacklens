@@ -1,5 +1,16 @@
 import { AsyncLocalStorage } from 'async_hooks'
-import { v4 as uuidv4 } from 'uuid'
+// Node's own UUID generator, not the `uuid` package.
+//
+// This SDK gets installed INTO other people's applications, so every
+// dependency it carries becomes their problem: another version to resolve,
+// another package to audit, another possible conflict. randomUUID has been
+// built into Node since 14.17 and does the same job.
+//
+// It was also an outright bug: `uuid` was never declared in this package's
+// dependencies. It only resolved because the (now deleted) Node backend
+// pulled it into the root node_modules, so a fresh clone could not build the
+// SDK at all.
+import { randomUUID } from 'crypto'
 import type { Span, SpanContext, StacklensConfig } from '@stacklens/types'
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -42,8 +53,8 @@ export function startSpan(operation: string, metadata?: Record<string, unknown>)
   const parent = storage.getStore()
 
   const span: Span = {
-    traceId: parent?.traceId ?? uuidv4(),
-    spanId: uuidv4(),
+    traceId: parent?.traceId ?? randomUUID(),
+    spanId: randomUUID(),
     parentSpanId: parent?.spanId,
     serviceId: config?.serviceId ?? 'unknown',
     operation,

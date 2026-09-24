@@ -1,0 +1,114 @@
+# ─────────────────────────────────────────────────────────────────────────────
+# Runs the test suite on GitHub's machines every time code is pushed.
+#
+# WHY: the tests only protect you if they actually run. Run by hand, they get
+# skipped on exactly the day you are in a hurry. Here they run on every push,
+# on a clean machine, so a green tick means "this works from a fresh clone" —
+# not "it works on the laptop it was written on".
+#
+# The `services:` blocks below are the same three databases as
+# docker-compose.yml, pinned to the same versions. The tests talk to real
+# Postgres, Redis and Qdrant on purpose (see backend-py/TESTING.md) — mocks
+# would not have caught the service-map or Qdrant-version bugs.
+# ─────────────────────────────────────────────────────────────────────────────
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+jobs:
+  backend:
+    name: Backend tests
+    runs-on: ubuntu-latest
+
+    services:
+      postgres:
+        image: postgres:16-alpine
+        env:
+          POSTGRES_DB: stacklens
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: password
+        ports: ['5432:5432']
+        # Without this, the job would start running tests before Postgres is
+        # ready to accept connections, and fail at random.
+        options: >-
+          --health-cmd "pg_isready -U postgres"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 10
+
+      redis:
+        image: redis:7-alpine
+        ports: ['6379:6379']
+        options: >-
+          --health-cmd "redis-cli ping"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 10
+
+      # The app calls ensure_collection() on startup, so Qdrant has to be up
+      # even though the tests that use it are skipped here.
+      qdrant:
+        image: qdrant/qdrant:v1.9.2
+        ports: ['6333:6333']
+
+    env:
+      DATABASE_URL: postgres://postgres:password@localhost:5432/stacklens
+      REDIS_URL: redis://localhost:6379
+      QDRANT_URL: http://localhost:6333
+      JWT_SECRET: ci-only-not-a-real-secret
+      COOKIE_SECURE: 'false'
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.13'
+          cache: pip
+          cache-dependency-path: backend-py/requirements.txt
+
+      - name: Install dependencies
+        run: pip install -r backend-py/requirements.txt
+
+      # The Qdrant image ships no health-check tool, so it is polled here instead.
+      - name: Wait for Qdrant
+        run: |
+          for i in $(seq 1 30); do
+            curl -sf http://localhost:6333/readyz && exit 0
+            sleep 2
+          done
+          echo "Qdrant did not become ready in 60s"; exit 1
+
+      # -m "not slow" skips the 6 RAG tests. They call the real Gemini embedding
+      # API, which needs a key and burns quota — neither belongs in CI.
+      - name: Run tests
+        working-directory: backend-py
+        run: python -m pytest -m "not slow"
+
+  frontend:
+    name: SDK + dashboard build
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      # Builds the SDK then the dashboard. Both run `tsc`, so a type error
+      # anywhere in either one fails the job.
+      - name: Build
+        run: npm run build
+
+      - name: Lint dashboard
+        run: npx eslint app components hooks lib
+        working-directory: dashboard
